@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#120f17" />
+  <title>FFXII Ultima Edition - Rare Game Tracker</title>
+  <style>
+    :root {
+      --bg: #09070d;
+      --panel: #120f17;
+      --card: #1b1624;
+      --text: #f7edf5;
+      --muted: #cdbecb;
+      --line: rgba(255, 237, 245, .12);
+      --accent: #f2c14e;
+      --good: #ee8bc7;
+      --gold: #f2c14e;
+      --pink: #ee8bc7;
+      --shadow: 0 12px 30px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, rgba(242,193,78,.16), transparent 32rem), radial-gradient(circle at top right, rgba(238,139,199,.12), transparent 30rem), linear-gradient(180deg, #120f17 0%, #09070d 100%);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .app { width: min(100%, 760px); margin: 0 auto; padding: 16px; }
+    header {
+      position: sticky; top: 0; z-index: 10; margin: 0 -16px 14px;
+      padding: max(12px, env(safe-area-inset-top)) 16px 12px;
+      background: rgba(18,15,23,.94); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line);
+    }
+    h1 { font-size: clamp(1.25rem, 5vw, 2rem); line-height: 1.05; margin: 0; letter-spacing: -.02em; }
+    .subtitle { margin: 5px 0 0; color: var(--muted); font-size: .92rem; }
+    .progress-wrap { margin-top: 12px; display: grid; gap: 8px; }
+    .progress-meta { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: .9rem; }
+    .bar { height: 12px; border-radius: 999px; background: rgba(255,255,255,.1); overflow: hidden; border: 1px solid rgba(255,255,255,.08); }
+    .bar > span { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--good)); transition: width .2s ease; box-shadow: 0 0 18px rgba(242,193,78,.25); }
+    .controls { display: grid; gap: 10px; margin: 14px 0 16px; }
+    .search { width: 100%; border: 1px solid var(--line); border-radius: 14px; padding: 14px; font-size: 1rem; color: var(--text); background: rgba(255,255,255,.08); outline: none; }
+    .search::placeholder { color: #bca9b8; }
+    .filters, .buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    button { border: 1px solid var(--line); border-radius: 14px; padding: 12px 10px; font-weight: 750; color: var(--text); background: rgba(255,255,255,.08); min-height: 44px; cursor: pointer; touch-action: manipulation; }
+    button.active { background: rgba(242,193,78,.18); border-color: rgba(242,193,78,.65); color: #fff4d1; }
+    button.danger { color: #fecaca; }
+    .section { margin: 14px 0; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(27,22,36,.86); box-shadow: var(--shadow); overflow: hidden; }
+    .section-header { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px; background: linear-gradient(180deg, rgba(242,193,78,.14), rgba(238,139,199,.06)); text-align: left; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; }
+    .section-title { font-size: 1rem; font-weight: 850; line-height: 1.15; }
+    .section-count { flex: 0 0 auto; color: var(--muted); font-size: .86rem; font-weight: 700; }
+    .games { display: grid; }
+    .game { display: grid; grid-template-columns: 48px 1fr; gap: 10px; align-items: start; padding: 13px 14px; border-bottom: 1px solid rgba(255,255,255,.08); background: rgba(18,15,23,.40); }
+    .game:nth-child(even) { background: rgba(255,255,255,.025); }
+    .game:last-child { border-bottom: 0; }
+    .game input { width: 29px; height: 29px; margin: 3px auto 0; accent-color: var(--good); }
+    .game-main { min-width: 0; }
+    .top-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .order { display: inline-flex; align-items: center; justify-content: center; min-width: 2.1rem; height: 1.55rem; padding: 0 7px; border-radius: 999px; background: rgba(242,193,78,.14); color: #ffe8a3; font-weight: 800; font-size: .78rem; border: 1px solid rgba(242,193,78,.28); }
+    .name-btn { display: inline; border: 0; background: transparent; padding: 2px 0; min-height: 0; border-radius: 6px; color: var(--text); font-size: 1.06rem; font-weight: 850; letter-spacing: -.01em; text-align: left; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+    .name-btn:after { content: "  ▾"; color: var(--good); font-size: .78rem; }
+    .game.expanded .name-btn:after { content: "  ▴"; }
+    .badge { color: #ffe8a3; background: rgba(242,193,78,.14); border: 1px solid rgba(242,193,78,.35); border-radius: 999px; padding: 2px 7px; font-size: .72rem; font-weight: 850; }
+    .location { margin-top: 4px; color: var(--muted); font-size: .92rem; line-height: 1.35; }
+    .tap-hint { margin-top: 4px; color: #f2aad4; font-size: .8rem; }
+    .condition { margin-top: 10px; padding: 11px 12px; border: 1px solid rgba(242,193,78,.24); border-radius: 14px; background: linear-gradient(180deg, rgba(242,193,78,.10), rgba(238,139,199,.08)); line-height: 1.42; }
+    .condition-title { display: block; color: #ffd978; font-size: .78rem; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+    .checked .name-btn { text-decoration: line-through; color: #ffd5eb; }
+    .checked .location { color: #ad9dab; }
+    .empty { margin: 22px 0; padding: 20px; border-radius: var(--radius); border: 1px dashed var(--line); color: var(--muted); text-align: center; }
+    .note { color: var(--muted); font-size: .86rem; line-height: 1.4; margin: 18px 2px 4px; }
+    @media (min-width: 640px) { .game { grid-template-columns: 54px 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>FFXII Ultima Edition - Rare Game Tracker</h1>
+      <p class="subtitle">Tap a box to mark found. Tap a rare game name to view spawn conditions.</p>
+      <div class="progress-wrap">
+        <div class="progress-meta"><strong id="progressText">0 of 80 found</strong><span id="percentText">0%</span></div>
+        <div class="bar"><span id="progressBar"></span></div>
+      </div>
+    </header>
+    <main>
+      <div class="controls">
+        <input id="search" class="search" type="search" placeholder="Search rare game, location, or condition" autocomplete="off" />
+        <div class="filters" role="group" aria-label="Filters">
+          <button id="filterAll" class="active" type="button">All</button>
+          <button id="filterOpen" type="button">Not Found</button>
+          <button id="filterFound" type="button">Found</button>
+        </div>
+        <div class="buttons">
+          <button id="expandAll" type="button">Expand</button>
+          <button id="collapseAll" type="button">Collapse</button>
+          <button id="reset" class="danger" type="button">Reset</button>
+        </div>
+      </div>
+      <div id="list"></div>
+      <p class="note">Progress saves on this device automatically. For best phone use, open this file in Chrome and add it to your home screen.</p>
+    </main>
+  </div>
+<script>
+const sections = [
+  {
+    "title": "Tomb of Raithwall",
+    "games": [
+      {
+        "order": 1,
+        "name": "Cultsworn Lich",
+        "location": "Tomb of Raithwall, Southfall Passage",
+        "condition": "20% chance to appear when a Lich uses Divide.",
+        "trophy": false
+      },
+      {
+        "order": 2,
+        "name": "Barmuu",
+        "location": "Tomb of Raithwall, Royal Passage",
+        "condition": "Build a chain of 12 enemies.",
+        "trophy": false
+      }
+    ]
+  },
+  {
+    "title": "Post-Raithwall Backtrack / Early Cleanup",
+    "games": [
+      {
+        "order": 3,
+        "name": "Ripe Rampager",
+        "location": "Dalmasca Estersand, Yardang Labyrinth",
+        "condition": "33% chance per Cactite or Cactoid killed in Yardang Labyrinth.",
+        "trophy": false
+      },
+      {
+        "order": 4,
+        "name": "Greeden",
+        "location": "Dalmasca Estersand, Bank of the Nebra",
+        "condition": "Stay in the area for 3 minutes without killing any Cactoids.",
+        "trophy": false
+      },
+      {
+        "order": 5,
+        "name": "Nekhbet",
+        "location": "Dalmasca Estersand, Sand-swept Naze",
+        "condition": "20% chance to spawn after killing a Cockatrice.",
+        "trophy": false
+      },
+      {
+        "order": 6,
+        "name": "Lindbur Wolf",
+        "location": "Dalmasca Westersand, Shimmering Horizons",
+        "condition": "Defeat 20 Wolves in Dalmasca Westersand.",
+        "trophy": false
+      },
+      {
+        "order": 7,
+        "name": "Dustia",
+        "location": "Dalmasca Westersand, Corridor of Sand",
+        "condition": "Have a party member below 10% HP.",
+        "trophy": false
+      },
+      {
+        "order": 8,
+        "name": "Fideliant",
+        "location": "Dalmasca Westersand, The Midfault",
+        "condition": "20% chance to spawn.",
+        "trophy": false
+      },
+      {
+        "order": 9,
+        "name": "Rain Dancer",
+        "location": "Giza Plains, Gizas South Bank / Warrior's Wash / Toam Hills",
+        "condition": "20% chance during the Rains.",
+        "trophy": false
+      },
+      {
+        "order": 10,
+        "name": "Razorfin",
+        "location": "Garamsythe Waterway, North Spur Sluiceway",
+        "condition": "10% chance to spawn instead of an Ichthon.",
+        "trophy": false
+      },
+      {
+        "order": 11,
+        "name": "Drowned",
+        "location": "Garamsythe Waterway, No. 4 Cloaca Spur",
+        "condition": "Stay in Garamsythe Waterway for 5 minutes.",
+        "trophy": false
+      },
+      {
+        "order": 12,
+        "name": "Molen",
+        "location": "Zertinan Caverns, Hourglass Basin",
+        "condition": "Go to the northern hidden-passage area and wait.",
+        "trophy": false
+      },
+      {
+        "order": 13,
+        "name": "Pineapple",
+        "location": "Ogir-Yensa Sandsea, Platform 1 Refinery",
+        "condition": "20% chance to spawn.",
+        "trophy": false
+      },
+      {
+        "order": 14,
+        "name": "Urutan Exile",
+        "location": "Ogir-Yensa Sandsea, Platform 2 Refinery",
+        "condition": "Defeat 100 Urutan-Yensa in Ogir-Yensa Sandsea.",
+        "trophy": false
+      },
+      {
+        "order": 15,
+        "name": "Megabomb",
+        "location": "Nam-Yensa Sandsea, Demesne of the Sandqueen",
+        "condition": "Build a chain of 21 enemies.",
+        "trophy": false
+      },
+      {
+        "order": 16,
+        "name": "Imdugud",
+        "location": "Nam-Yensa Sandsea, Withering Shores",
+        "condition": "Stand on the center circular platform past the Bagolies and wait.",
+        "trophy": false
+      }
+    ]
+  },
+  {
+    "title": "Ozmone, Henne, Golmore, Paramina, Stilshrine",
+    "games": [
+      {
+        "order": 17,
+        "name": "Bull Croc",
+        "location": "Ozmone Plain, The Shred",
+        "condition": "20% chance to spawn on entry.",
+        "trophy": false
+      },
+      {
+        "order": 18,
+        "name": "Aeros",
+        "location": "Ozmone Plain, The Shred",
+        "condition": "Defeat Bull Croc.",
+        "trophy": false
+      },
+      {
+        "order": 19,
+        "name": "Glaring Eye",
+        "location": "Henne Mines",
+        "condition": "10% chance to spawn after defeating a Hecteyes.",
+        "trophy": false
+      },
+      {
+        "order": 20,
+        "name": "Midgardsormr",
+        "location": "Golmore Jungle, Paths of Chained Light",
+        "condition": "20% chance to spawn.",
+        "trophy": false
+      },
+      {
+        "order": 21,
+        "name": "Phyllo",
+        "location": "Golmore Jungle, The Branchway",
+        "condition": "20% chance to spawn.",
+        "trophy": false
+      },
+      {
+        "order": 22,
+        "name": "Grave Lord",
+        "location": "Golmore Jungle, The Rustling Chapel",
+        "condition": "Build a chain of 21 enemies.",
+        "trophy": false
+      },
+      {
+        "order": 23,
+        "name": "Anchag",
+        "location": "Paramina Rift, Karydine Glacier",
+        "condition": "Defeat all enemies in Karydine Glacier.",
+        "trophy": false
+      },
+      {
+        "order": 24,
+        "name": "Negalmuur",
+        "location": "Stilshrine of Miriam, Ward of the Sword-King",
+        "condition": "Stay in Stilshrine for 30 minutes, then defeat Darkmare in Ward of the Sword-King.",
+        "trophy": false
+      },
+      {
+        "order": 25,
+        "name": "Matriarch Bomb",
+        "location": "Stilshrine of Miriam, Ward of Measure",
+        "condition": "Enter the secret passage in Ward of the Sword-King on the right side.",
+        "trophy": false
+      }
+    ]
+  },
+  {
+    "title": "Mosphoran, Salikawood, Phon Coast",
+    "games": [
+      {
+        "order": 26,
+        "name": "Wary Wolf",
+        "location": "Mosphoran Highwaste, Summit Path",
+        "condition": "7% chance to spawn instead of a Worgen.",
+        "trophy": false
+      },
+      {
+        "order": 27,
+        "name": "Grey Molter",
+        "location": "Mosphoran Highwaste, Empyrean Way",
+        "condition": "In-game timer must be between :10 and :20 minutes.",
+        "trophy": false
+      },
+      {
+        "order": 28,
+        "name": "Spee",
+        "location": "Salikawood, Sun-dappled Path",
+        "condition": "15% chance after defeating a Wyrdhare.",
+        "trophy": false
+      },
+      {
+        "order": 29,
+        "name": "Wood Toad",
+        "location": "Salikawood, Corridor of Ages",
+        "condition": "20% chance to spawn. It is invisible.",
+        "trophy": false
+      },
+      {
+        "order": 30,
+        "name": "Apsara",
+        "location": "Phon Coast, The Mauleia Strand",
+        "condition": "Defeat 10 Piranhas in Phon Coast.",
+        "trophy": false
+      }
+    ]
+  },
+  {
+    "title": "Hunt Club Opens at Phon Coast",
+    "games": [
+      {
+        "order": 31,
+        "name": "Thalassinon",
+        "location": "Phon Coast, The Vaddu Strand",
+        "condition": "Trophy. Start Hunt Club, then wait at the highest point of Vaddu Strand for 10 seconds.",
+        "trophy": true
+      },
+      {
+        "order": 32,
+        "name": "Zombie Lord",
+        "location": "Tomb of Raithwall, Northfall Passage",
+        "condition": "Trophy. In-game timer must be between :00 and :29 minutes.",
+        "trophy": true
+      },
+      {
+        "order": 33,
+        "name": "Kaiser Wolf",
+        "location": "Dalmasca Westersand, Corridor of Sand",
+        "condition": "Trophy. Defeat Lindbur Wolf, then 40% chance to spawn in Corridor of Sand.",
+        "trophy": true
+      },
+      {
+        "order": 34,
+        "name": "Terror Tyrant",
+        "location": "Dalmasca Estersand, Broken Sands",
+        "condition": "Trophy. 40% chance to spawn instead of a Wild Saurian.",
+        "trophy": true
+      },
+      {
+        "order": 35,
+        "name": "Gavial",
+        "location": "Garamsythe Waterway, No. 10 Channel",
+        "condition": "Trophy. Move to the lower westernmost part of the map and wait.",
+        "trophy": true
+      },
+      {
+        "order": 36,
+        "name": "Nazarnir",
+        "location": "Giza Plains, Starfall Field, Dry",
+        "condition": "Trophy. 40% chance to spawn instead of a Sleipnir.",
+        "trophy": true
+      },
+      {
+        "order": 37,
+        "name": "Bull Chocobo",
+        "location": "Ogir-Yensa Sandsea, South Tank Approach",
+        "condition": "Trophy. 40% chance to spawn.",
+        "trophy": true
+      },
+      {
+        "order": 38,
+        "name": "Victanir",
+        "location": "Nam-Yensa Sandsea, Yellow Sands",
+        "condition": "Trophy. 40% chance to spawn.",
+        "trophy": true
+      },
+      {
+        "order": 39,
+        "name": "Killbug",
+        "location": "Ozmone Plain, The Switchback",
+        "condition": "Trophy. Appears as a large treasure chest when the in-game timer is between :10 and :39 minutes.",
+        "trophy": true
+      },
+      {
+        "order": 40,
+        "name": "Biding Mantis",
+        "location": "Golmore Jungle, The Needlebrake",
+        "condition": "Trophy. In-game timer must be between :30 and :59 minutes.",
+        "trophy": true
+      },
+      {
+        "order": 41,
+        "name": "Rageclaw",
+        "location": "Salikawood, Piebald Path",
+        "condition": "Trophy. Do not kill enemies in Salikawood, then wait 60 seconds.",
+        "trophy": true
+      },
+      {
+        "order": 42,
+        "name": "Dheed",
+        "location": "Mosphoran Highwaste, Skyreach Ridge",
+        "condition": "Trophy. 40% chance to spawn.",
+        "trophy": true
+      },
+      {
+        "order": 43,
+        "name": "Skullash",
+        "location": "Phon Coast, Cape Tialan",
+        "condition": "Trophy. 40% chance to spawn.",
+        "trophy": true
+      }
+    ]
+  },
+  {
+    "title": "Tchita Uplands and Sochen Cave Palace",
+    "games": [
+      {
+        "order": 44,
+        "name": "Tarasque",
+        "location": "Tchita Uplands, Garden of Life's Circle",
+        "condition": "Build a chain of 22 Serpents or Malboro Overkings.",
+        "trophy": false
+      },
+      {
+        "order": 45,
+        "name": "Grimalkin",
+        "location": "Tchita Uplands, Uazcuff Hills",
+        "condition": "Trophy. 10% chance to spawn instead of a Coeurl.",
+        "trophy": true
+      },
+      {
+        "order": 46,
+        "name": "Kris",
+        "location": "Tchita Uplands, The Highlands",
+        "condition": "Trophy. 40% chance to spawn.",
+        "trophy": true
+      },
+      {
+        "order": 47,
+        "name": "Cubus",
+        "location": "Sochen Cave Palace, Temptation Eluded",
+        "condition": "Defeat all Pit Fiends and Wendigos in Temptation Eluded.",
+        "trophy": false
+      },
+      {
+        "order": 48,
+        "name": "Anubys",
+        "location": "Sochen Cave Palace, Mirror of the Soul",
+        "condition": "Trophy. Enter Mirror of the Soul from Falls of Time.",
+        "trophy": true
+      },
+      {
+        "order": 49,
+        "name": "Wendice",
+        "location": "Sochen Cave Palace, Destiny's March",
+        "condition": "Trophy. Defeat 3 Wendigos in Destiny's March.",
+        "trophy": true
+      }
+    ]
+  },
+  {
+    "title": "Optional Area Cleanup",
+    "games": [
+      {
+        "order": 50,
+        "name": "Minibug",
+        "location": "Barheim Passage, East-West Bypass",
+        "condition": "20% chance to spawn.",
+        "trophy": false
+      },
+      {
+        "order": 51,
+        "name": "Ithuno",
+        "location": "Barheim Passage, Special Op Sector 5",
+        "condition": "20% chance to appear as a special treasure chest.",
+        "trophy": false
+      },
+      {
+        "order": 52,
+        "name": "Ishteen",
+        "location": "Barheim Passage, East-West Bypass / The Zeviah Span",
+        "condition": "Trophy. Wait in the area. Spawn odds rise by 2% every 10 seconds.",
+        "trophy": true
+      },
+      {
+        "order": 53,
+        "name": "Aerieel",
+        "location": "Lhusu Mines, Oltam Span",
+        "condition": "20% chance to spawn.",
+        "trophy": false
+      },
+      {
+        "order": 54,
+        "name": "Bombshell",
+        "location": "Lhusu Mines, Lasche Span",
+        "condition": "20% chance to spawn.",
+        "trophy": false
+      },
+      {
+        "order": 55,
+        "name": "Gemhorn",
+        "location": "Lhusu Mines, Site 11",
+        "condition": "Defeat all enemies in Site 11.",
+        "trophy": false
+      },
+      {
+        "order": 56,
+        "name": "Disma",
+        "location": "Lhusu Mines, Site 5 / Site 6 South",
+        "condition": "Trophy. 5% chance to spawn instead of a Dark Lord.",
+        "trophy": true
+      },
+      {
+        "order": 57,
+        "name": "Helvinek",
+        "location": "Necrohol of Nabudis",
+        "condition": "Defeat 6 Oversouls in the Necrohol.",
+        "trophy": false
+      },
+      {
+        "order": 58,
+        "name": "Vorres",
+        "location": "Necrohol of Nabudis, Hall of the Ivory Covenant",
+        "condition": "Trophy. Lure a Dark Elemental near the Cloister of Reason entrance.",
+        "trophy": true
+      },
+      {
+        "order": 59,
+        "name": "Arioch",
+        "location": "Nabreus Deadlands, The Slumbermead",
+        "condition": "Trophy. 40% chance to spawn.",
+        "trophy": true
+      },
+      {
+        "order": 60,
+        "name": "Velelu",
+        "location": "Nabreus Deadlands, The Fog Mutters",
+        "condition": "Have a party member below 20% HP.",
+        "trophy": false
+      },
+      {
+        "order": 61,
+        "name": "Etherian",
+        "location": "Cerobi Steppe, The Northsward",
+        "condition": "Defeat all enemies in The Northsward.",
+        "trophy": false
+      },
+      {
+        "order": 62,
+        "name": "Aspidochelon",
+        "location": "Cerobi Steppe, Feddik River",
+        "condition": "Trophy. 40% chance to spawn on entry.",
+        "trophy": true
+      },
+      {
+        "order": 63,
+        "name": "Bluesang",
+        "location": "Cerobi Steppe, Crossfield",
+        "condition": "Trophy. 40% chance to spawn.",
+        "trophy": true
+      }
+    ]
+  },
+  {
+    "title": "Feywood, Giruvegan, Great Crystal",
+    "games": [
+      {
+        "order": 64,
+        "name": "Crypt Bunny",
+        "location": "Feywood, Walk of Stolen Truths",
+        "condition": "Defeat all Tartaruses and 6 Cerberuses, then 20% chance to spawn.",
+        "trophy": false
+      },
+      {
+        "order": 65,
+        "name": "Juggernaut",
+        "location": "Feywood, White Magick's Embrace",
+        "condition": "In-game timer must be between :00 and :10 minutes.",
+        "trophy": false
+      },
+      {
+        "order": 66,
+        "name": "Dreadguard",
+        "location": "Feywood, Walk of Dancing Shadow",
+        "condition": "Trophy. 40% chance to spawn instead of a Mirrorknight.",
+        "trophy": true
+      },
+      {
+        "order": 67,
+        "name": "Evil Spirit",
+        "location": "The Great Crystal",
+        "condition": "5% chance to spawn instead of a Forbidden.",
+        "trophy": false
+      },
+      {
+        "order": 68,
+        "name": "Larva Eater",
+        "location": "The Great Crystal",
+        "condition": "Defeat all Necrophobes in the Leo Gate Stone area, then move between the Leo Gate Stone area and Waystone XIV.",
+        "trophy": false
+      },
+      {
+        "order": 69,
+        "name": "Crystal Knight",
+        "location": "The Great Crystal",
+        "condition": "Trophy. Move from Way Stone XX to the Sagittarius Gate Switch and back in a clockwise loop.",
+        "trophy": true
+      }
+    ]
+  },
+  {
+    "title": "Ridorana, Pharos, Subterra",
+    "games": [
+      {
+        "order": 70,
+        "name": "Pallicant",
+        "location": "Ridorana Cataract, City of Other Days",
+        "condition": "Defeat all enemies in City of Other Days, leave, then reenter.",
+        "trophy": false
+      },
+      {
+        "order": 71,
+        "name": "Abelisk",
+        "location": "Ridorana Cataract, Echoes from Time's Garden",
+        "condition": "Trophy. 30% chance to spawn.",
+        "trophy": true
+      },
+      {
+        "order": 72,
+        "name": "Tower",
+        "location": "Pharos, Third Ascent, Spire Ravel, 2nd Flight",
+        "condition": "20% chance to spawn.",
+        "trophy": false
+      },
+      {
+        "order": 73,
+        "name": "Vishno",
+        "location": "Pharos, First Ascent, Wellspring Ravel, 4th Flight",
+        "condition": "Defeat 10 Deidars in Pharos.",
+        "trophy": false
+      },
+      {
+        "order": 74,
+        "name": "Avenger",
+        "location": "Pharos, Second Ascent, Station of Ascension",
+        "condition": "Trophy. 40% chance at the bottom of the stairs leading to Reach of the Damned.",
+        "trophy": true
+      },
+      {
+        "order": 75,
+        "name": "Vagrant Soul",
+        "location": "Pharos Subterra, Abyssal, North",
+        "condition": "25% chance after Shadowseer is defeated.",
+        "trophy": false
+      },
+      {
+        "order": 76,
+        "name": "Luxollid",
+        "location": "Pharos Subterra, Umbra, South",
+        "condition": "Defeat Vagrant Soul.",
+        "trophy": false
+      }
+    ]
+  },
+  {
+    "title": "Late / Remaining Trophy and Special Cleanup",
+    "games": [
+      {
+        "order": 77,
+        "name": "Myath",
+        "location": "Stilshrine of Miriam, Ward of Velitation",
+        "condition": "Trophy. Defeat 3 Dragon Aevises in Ward of Velitation, then exit and reenter.",
+        "trophy": true
+      },
+      {
+        "order": 78,
+        "name": "Melt",
+        "location": "Henne Mines, Pithead Junction B",
+        "condition": "Trophy. 50% chance after flipping the gate switch.",
+        "trophy": true
+      },
+      {
+        "order": 79,
+        "name": "Ancbolder",
+        "location": "Paramina Rift, Karydine Glacier",
+        "condition": "Trophy. Defeat all enemies in Karydine Glacier.",
+        "trophy": true
+      },
+      {
+        "order": 80,
+        "name": "Alteci",
+        "location": "Zertinan Caverns, The Undershore",
+        "condition": "Trophy. Build a chain of 12 enemies.",
+        "trophy": true
+      }
+    ]
+  }
+];
+const STORAGE_KEY = "ffxii-ue-rare-game-found-v2";
+const COLLAPSE_KEY = "ffxii-ue-rare-game-collapsed-v2";
+let found = new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"));
+let collapsed = new Set(JSON.parse(localStorage.getItem(COLLAPSE_KEY) || "[]"));
+let expanded = new Set();
+let filter = "all";
+let query = "";
+const total = sections.reduce((sum, section) => sum + section.games.length, 0);
+const list = document.getElementById("list");
+const search = document.getElementById("search");
+const progressText = document.getElementById("progressText");
+const percentText = document.getElementById("percentText");
+const progressBar = document.getElementById("progressBar");
+function escapeHtml(value) {
+  return String(value).replace(/[&<>'"]/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[char]));
+}
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([...found]));
+  localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...collapsed]));
+}
+function matchesGame(game) {
+  const isFound = found.has(game.order);
+  if (filter === "found" && !isFound) return false;
+  if (filter === "open" && isFound) return false;
+  if (!query) return true;
+  const haystack = `${game.order} ${game.name} ${game.location} ${game.condition}`.toLowerCase();
+  return haystack.includes(query.toLowerCase());
+}
+function updateProgress() {
+  const count = found.size;
+  const pct = Math.round((count / total) * 100);
+  progressText.textContent = `${count} of ${total} found`;
+  percentText.textContent = `${pct}%`;
+  progressBar.style.width = `${pct}%`;
+}
+function render() {
+  updateProgress();
+  list.innerHTML = "";
+  let visibleTotal = 0;
+  sections.forEach((section, sectionIndex) => {
+    const visibleGames = section.games.filter(matchesGame);
+    if (!visibleGames.length) return;
+    visibleTotal += visibleGames.length;
+    const sectionFound = section.games.filter(game => found.has(game.order)).length;
+    const wrap = document.createElement("section");
+    wrap.className = "section";
+    const header = document.createElement("button");
+    header.className = "section-header";
+    header.type = "button";
+    header.innerHTML = `<span class="section-title">${escapeHtml(section.title)}</span><span class="section-count">${sectionFound}/${section.games.length} ${collapsed.has(sectionIndex) ? "+" : "-"}</span>`;
+    header.addEventListener("click", () => {
+      if (collapsed.has(sectionIndex)) collapsed.delete(sectionIndex); else collapsed.add(sectionIndex);
+      save(); render();
+    });
+    wrap.appendChild(header);
+    if (!collapsed.has(sectionIndex)) {
+      const games = document.createElement("div");
+      games.className = "games";
+      visibleGames.forEach(game => {
+        const row = document.createElement("div");
+        const isExpanded = expanded.has(game.order);
+        row.className = `game ${found.has(game.order) ? "checked" : ""} ${isExpanded ? "expanded" : ""}`;
+        row.innerHTML = `
+          <input type="checkbox" ${found.has(game.order) ? "checked" : ""} aria-label="Mark ${escapeHtml(game.name)} found" />
+          <div class="game-main">
+            <div class="top-line">
+              <span class="order">${game.order}</span>
+              <button class="name-btn" type="button" aria-expanded="${isExpanded}">${escapeHtml(game.name)}</button>
+              ${game.trophy ? '<span class="badge">Trophy</span>' : ''}
+            </div>
+            <div class="location">${escapeHtml(game.location)}</div>
+            ${isExpanded ? `<div class="condition"><span class="condition-title">Spawn Condition</span>${escapeHtml(game.condition)}</div>` : '<div class="tap-hint">Tap name for spawn condition</div>'}
+          </div>`;
+        row.querySelector("input").addEventListener("change", event => {
+          if (event.target.checked) found.add(game.order); else found.delete(game.order);
+          save(); render();
+        });
+        row.querySelector(".name-btn").addEventListener("click", () => {
+          if (expanded.has(game.order)) expanded.delete(game.order); else expanded.add(game.order);
+          render();
+        });
+        games.appendChild(row);
+      });
+      wrap.appendChild(games);
+    }
+    list.appendChild(wrap);
+  });
+  if (!visibleTotal) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "No rare game match your search or filter.";
+    list.appendChild(empty);
+  }
+}
+function setFilter(next) {
+  filter = next;
+  document.querySelectorAll(".filters button").forEach(btn => btn.classList.remove("active"));
+  document.getElementById(next === "all" ? "filterAll" : next === "open" ? "filterOpen" : "filterFound").classList.add("active");
+  render();
+}
+document.getElementById("filterAll").addEventListener("click", () => setFilter("all"));
+document.getElementById("filterOpen").addEventListener("click", () => setFilter("open"));
+document.getElementById("filterFound").addEventListener("click", () => setFilter("found"));
+document.getElementById("expandAll").addEventListener("click", () => { collapsed.clear(); save(); render(); });
+document.getElementById("collapseAll").addEventListener("click", () => { collapsed = new Set(sections.map((_, index) => index)); save(); render(); });
+document.getElementById("reset").addEventListener("click", () => { if (confirm("Clear all checked rare game?")) { found.clear(); save(); render(); } });
+search.addEventListener("input", event => { query = event.target.value.trim(); render(); });
+render();
+</script>
+</body>
+</html>
